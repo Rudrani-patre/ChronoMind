@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'createdAt'])
+        && data.keys().size() >= 4 && data.keys().size() <= 7
+        && data.uid is string && data.uid.size() <= 128
+        && data.name is string && data.name.size() <= 200
+        && data.email is string && data.email.size() <= 200
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && (data.get('streak', null) == null || data.streak is int)
+        && (data.get('longestStreak', null) == null || data.longestStreak is int)
+        && (data.get('consistencyScore', null) == null || data.consistencyScore is int);
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['userId', 'task', 'deadline', 'totalSubtasks', 'completedSubtasks', 'progressPercentage', 'scheduleStatus', 'createdAt', 'updatedAt'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.task is string && data.task.size() <= 500
+        && data.deadline is string && data.deadline.size() <= 100
+        && data.totalSubtasks is int
+        && data.completedSubtasks is int
+        && (data.progressPercentage is float || data.progressPercentage is int)
+        && data.scheduleStatus is string && (data.scheduleStatus == 'normal' || data.scheduleStatus == 'rescue' || data.scheduleStatus == 'at_risk')
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && data.updatedAt is string && data.updatedAt.size() <= 50;
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'email', 'streak', 'longestStreak', 'consistencyScore']);
+      allow delete: if false;
+    }
+
+    // Tasks collection rules
+    match /tasks/{taskId} {
+      allow read: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) && incoming().userId == request.auth.uid && isValidTask(incoming());
+      allow update: if isSignedIn() && isValidId(taskId) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isValidTask(incoming());
+      allow delete: if isSignedIn() && isValidId(taskId) && existing().userId == request.auth.uid;
+    }
+
+    // Goals collection rules
+    match /goals/{goalId} {
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Habit logs collection rules
+    match /habit_logs/{logId} {
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Future behavior logs collection rules
+    match /future_behavior_logs/{logId} {
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Calendar events collection rules
+    match /calendar_events/{eventId} {
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Completion logs collection rules (Immutable Logs)
+    match /completion_logs/{logId} {
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Behavior logs collection rules (Immutable Logs)
+    match /behavior_logs/{logId} {
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

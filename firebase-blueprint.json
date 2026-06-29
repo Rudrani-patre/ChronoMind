@@ -1,0 +1,207 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account information stored upon signup",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique Firebase Authentication User ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "streak": {
+          "type": "integer",
+          "description": "User's current daily streak"
+        },
+        "longestStreak": {
+          "type": "integer",
+          "description": "User's personal best streak"
+        },
+        "consistencyScore": {
+          "type": "integer",
+          "description": "User's consistency percentage score"
+        }
+      },
+      "required": ["uid", "name", "email", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "User's deadline-bound task containing subtasks and execution planning",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The creator's User ID"
+        },
+        "task": {
+          "type": "string",
+          "description": "Title or description of the parent task"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Deadline timestamp for the parent task"
+        },
+        "generatedPlan": {
+          "type": "string",
+          "description": "Markdown or JSON string of the decompised roadmap"
+        },
+        "subtasks": {
+          "type": "array",
+          "description": "Array of decomposed subtasks"
+        },
+        "totalSubtasks": {
+          "type": "integer",
+          "description": "Total count of subtasks"
+        },
+        "completedSubtasks": {
+          "type": "integer",
+          "description": "Completed subtask count"
+        },
+        "progressPercentage": {
+          "type": "number",
+          "description": "Calculated progress percentage"
+        },
+        "scheduleStatus": {
+          "type": "string",
+          "enum": ["normal", "rescue", "at_risk"],
+          "description": "Current schedule urgency status"
+        },
+        "futurePrediction": {
+          "type": "string",
+          "description": "Future consequence prediction text from simulator"
+        },
+        "rescuePlan": {
+          "type": "string",
+          "description": "Emergency execution compressed plan from Rescue Mode"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Task creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Task update timestamp"
+        }
+      },
+      "required": [
+        "userId",
+        "task",
+        "deadline",
+        "totalSubtasks",
+        "completedSubtasks",
+        "progressPercentage",
+        "scheduleStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CompletionLog": {
+      "title": "CompletionLog",
+      "description": "Log entry created when a user completes a task with all subtasks",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User ID of the task owner"
+        },
+        "taskId": {
+          "type": "string",
+          "description": "The completed Task ID"
+        },
+        "taskName": {
+          "type": "string",
+          "description": "The name of the task"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Completion timestamp"
+        },
+        "totalTimeSpent": {
+          "type": "string",
+          "description": "Readable time spent"
+        },
+        "completionEfficiency": {
+          "type": "integer",
+          "description": "Efficiency rating percentage"
+        },
+        "riskAvoided": {
+          "type": "integer",
+          "description": "Risk percentage avoided"
+        },
+        "streakUpdated": {
+          "type": "integer",
+          "description": "User's streak value at completion"
+        }
+      },
+      "required": ["userId", "taskId", "taskName", "completedAt", "totalTimeSpent", "completionEfficiency", "riskAvoided"]
+    },
+    "BehaviorLog": {
+      "title": "BehaviorLog",
+      "description": "Log entry created when a dynamic context-aware reminder is triggered",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User ID of the session owner"
+        },
+        "taskId": {
+          "type": "string",
+          "description": "The related Task ID"
+        },
+        "triggerType": {
+          "type": "string",
+          "description": "The triggering condition: inactivity, deadline, behind, progressing, rescue_near"
+        },
+        "message": {
+          "type": "string",
+          "description": "The reminder alert message displayed"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Log entry creation timestamp"
+        },
+        "riskScore": {
+          "type": "integer",
+          "description": "Task risk score at trigger time"
+        }
+      },
+      "required": ["userId", "taskId", "triggerType", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User private profiles"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User tasks with scheduling and simulation details"
+    },
+    "/completion_logs/{logId}": {
+      "schema": "CompletionLog",
+      "description": "Logs when tasks are fully completed"
+    },
+    "/behavior_logs/{logId}": {
+      "schema": "BehaviorLog",
+      "description": "Behavioral nudge/reminder events logs"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "ChronoMind",
+  "description": "An AI-powered execution intelligence system that helps users survive deadlines by planning, adapting, predicting failure, and rescuing progress.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
